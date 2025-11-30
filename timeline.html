@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Career Timeline</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        background: #f5f5f5;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .timeline-container {
+        max-width: 1100px;
+        margin: auto;
+        display: grid;
+        grid-template-columns: 550px 1fr; /* left: job titles, right: bars */
+        gap: 20px;
+    }
+
+    .job-titles {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+
+    .timeline-bars {
+        position: relative;
+    }
+
+    .year-scale {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .bar {
+        height: 22px;
+        background: #4a90e2;
+        border-radius: 4px;
+        margin: 18px 0; 
+        display: flex;
+        align-items: center;
+        overflow: hidden; /* allow small bars to hide the label */
+    }
+
+    .job-title {
+        margin: 10px 0;
+        font-weight: bold;
+    }
+    .bar-label {
+        color: #fff;
+        padding-left: 8px;
+        font-size: 12px;
+        line-height: 1;
+        text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+        white-space: nowrap;
+        transform: translateY(-1px);
+    }
+</style>
+
+</head>
+<body>
+
+<h1>Career Timeline</h1>
+
+<div class="year-scale" id="year-scale"></div>
+
+<div class="timeline-container">
+    <div class="job-titles" id="job-titles"></div>
+    <div class="timeline-bars" id="timeline-bars"></div>
+</div>
+
+<script>
+// ----------------------------------------
+// YOUR JOB HISTORY HERE (now with months)
+// ----------------------------------------
+// Format: from/to are in 'YYYY-MM' format. Use 'present' for ongoing role.
+const jobs = [
+    { company: "Intelliam", role: "Software Engineer", from: "2025-01", to: "present" },
+    { company: "GoDaddy", role: "Senior Full-Stack Developer", from: "2022-08", to: "2024-07" },
+    { company: "BJSS", role: "Software Engineer", from: "2021-08", to: "2022-08" },
+    { company: "Wellbeing Software", role: "Java Developer", from: "2016-11", to: "2021-08" },
+    { company: "Zedcore", role: "Software Engineer", from: "2016-01", to: "2016-02" },
+    { company: "Capita", role: "Orbit Services Engineer", from: "2016-03", to: "2016-10" },
+    { company: "learndirect", role: "Web Developer", from: "1999-07", to: "2015-01" }
+];
+
+// Sort jobs newest→oldest or oldest→newest (your choice)
+// This prevents overlaps visually
+// helper: parse 'YYYY-MM' into a Date at start of month.
+function parseYM(ym) {
+    if (!ym || ym === 'present' || ym === 'Present') return new Date();
+    const [y, m] = ym.split('-').map(Number);
+    return new Date(y, m - 1, 1);
+}
+
+// months inclusive from start to end
+function monthsDiffInclusive(a, b) {
+    return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth()) + 1;
+}
+
+// show month short name & year (e.g. Aug 2021)
+function formatYM(date) {
+    if (!date) return '';
+    return date === 'present' ? 'Present' : new Intl.DateTimeFormat('en', { month: 'short', year: 'numeric' }).format(date);
+}
+
+// convert job date strings to Date objects and add helpers
+for (const job of jobs) {
+    job.fromDate = parseYM(job.from);
+    job.toDate = job.to === 'present' || job.to === 'Present' ? new Date() : parseYM(job.to);
+}
+
+// Sort jobs newest→oldest based on start date (descending)
+jobs.sort((a, b) => b.fromDate - a.fromDate);
+
+// ----------------------------------------
+// TIMELINE GENERATION
+// ----------------------------------------
+// Determine min and max across actual months
+const minDate = new Date(Math.min(...jobs.map(j => j.fromDate)));
+const maxDate = new Date(Math.max(...jobs.map(j => j.toDate)));
+const totalMonths = monthsDiffInclusive(minDate, maxDate);
+
+const titlesEl = document.getElementById("job-titles");
+const barsEl = document.getElementById("timeline-bars");
+const scaleEl = document.getElementById("year-scale");
+
+// Build year scale (tick every 1 or 3 years depending on range)
+const startYear = minDate.getFullYear();
+const endYear = maxDate.getFullYear();
+const spanStep = Math.max(1, Math.round((endYear - startYear) / 6)); // ~6 labels
+for (let y = startYear; y <= endYear; y += spanStep) {
+    const span = document.createElement("span");
+    span.textContent = y;
+    scaleEl.appendChild(span);
+}
+
+barsEl.appendChild(scaleEl);
+const spacer = document.createElement("div");
+spacer.textContent = " "; // Empty spacer
+spacer.style.height = "22px";
+titlesEl.appendChild(spacer); // Spacer for alignment
+
+// Add each job row
+jobs.forEach(job => {
+    // Left column: job title
+    const titleEl = document.createElement("div");
+    titleEl.className = "job-title";
+    // format date range for display
+    const fromStr = formatYM(job.fromDate);
+    const toStr = (job.to === 'present' || job.to === 'Present') ? 'Present' : formatYM(job.toDate);
+    titleEl.textContent = `${job.role} — ${job.company} (${fromStr}–${toStr})`;
+    titlesEl.appendChild(titleEl);
+
+    // Right column: timeline bar
+    const bar = document.createElement("div");
+    bar.className = "bar";
+
+    const offsetMonths = monthsDiffInclusive(minDate, job.fromDate) - 1; // months before start
+    const durationMonths = monthsDiffInclusive(job.fromDate, job.toDate);
+    const offsetPct = (offsetMonths / totalMonths) * 100;
+    const durationPct = (durationMonths / totalMonths) * 100;
+
+    bar.style.marginLeft = offsetPct + "%";
+    bar.style.width = durationPct + "%";
+    // tooltip = months + percentage, and visible label inside bar (if space)
+    const pctRounded = Math.round(durationPct * 100) / 100; // percent of total timeline
+    bar.title = `${durationMonths} month(s) — ${pctRounded}% of timeline`;
+    bar.setAttribute('role','img');
+    bar.setAttribute('aria-label', `${job.role} at ${job.company}, ${durationMonths} months, ${pctRounded}% of timeline`);
+    const label = document.createElement('span');
+    label.className = 'bar-label';
+    label.textContent = `${durationMonths}m • ${pctRounded}%`;
+    bar.appendChild(label);
+
+    barsEl.appendChild(bar);
+});
+</script>
+
+</body>
+</html>
