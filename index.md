@@ -1,4 +1,4 @@
-# Your Name – Software Engineer
+# Robert Gallacher – Software Engineer
 Welcome to my GitHub CV.
 
 ## CV Versions
@@ -6,7 +6,8 @@ Welcome to my GitHub CV.
 - [Full CV](cv/full-cv.md)
 
 ## About Me
-Short intro...
+I'm a Senior Java Engineer with 20+ years of experience across backend, microservices, and cloud engineering. I enjoy solving real problems with clean, reliable code and modern engineering practices.
+
 
 ## Projects
 Links to your GitHub repos...
